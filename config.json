@@ -1,0 +1,13 @@
+{
+	"origen" : "./origen/",
+	"destino"   : "./destino/",
+	"tmpfolder" : "./tmp/",
+	"ficheros" : {
+		"01-Doc.docx" : ["01-ENT", "04-FIN/dos"],
+		"02-Test.docx" : ["02-BAS"]
+	},
+	"@#@#":"################################################################################",
+	"_OJO_" : "APARTIR DE AQUI LA COSA ES SENSIBLE. NO TOCAR SI NO SE SABE LO QUE SE HACE",
+	"#@#@":"################################################################################",
+	"nivel1" : "\\w-\\d{3}"
+}
