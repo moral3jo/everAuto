@@ -2,6 +2,7 @@ const gulp = require('gulp');
 const dirTree = require('directory-tree');
 var jsonfile = require('jsonfile')
 var colors = require('colors');
+const fs = require('fs');
 
 var forEach = Array.prototype.forEach;
 
@@ -38,6 +39,7 @@ gulp.task('modulos', function(){
 	*/
 	
 	//TODO existen en destino??
+	//mirarSiExistenEnDestino(resultado);
 	
 	//TODO generar informe
 	informe(resultado);
@@ -91,6 +93,44 @@ function buscarFicheroEnDirectorio(fichero, rutaProyecto){
 function carpetaVacia(carpeta){
 	return typeof carpeta.children !== 'undefined' && carpeta.children.length==0;
 }
+
+//MODULO 3 : MIRAR SI EXISTEN EN DESTINO
+function mirarSiExistenEnDestino(resultado){
+	//TODO: NO PUEDO MAPEAR TODO DESTINO, ES ENORME Y NO ME INTERESA
+	//DESTINO/XXXXXXXXXXXXXXXXnombreComun/<<AQUI EMPEZAR A BUSCAR RECURSIVAMENTE>>
+	
+	fs.readdirSync(config.destino).forEach(file => {
+	  console.log(file);
+	})
+	
+	//mapeo destino
+	//var arbolProyecto = dirTree(rutaProyecto.path, {});
+	
+	
+	//recorro cada proyecto
+	resultado.proyectos.forEach(function(proyecto) { //por cada proyecto
+		proyecto.ficheros.forEach(function(fichero){ //por cada fichero
+			if(fichero.hasOwnProperty('origenpath')){//si existe en origen
+				fichero.destino.forEach(function(destino){//por cada destino
+					var arbolDestino = dirTree(config.destino+destino, {});//mapeo destino
+					console.log('mapeo')
+					console.log(config.destino+destino);
+					console.log(arbolDestino);
+					var regex = new RegExp(fichero.patron,"i");	
+					forEach.call(arbolDestino.children, function(fichEnRuta) {
+						console.log(fichEnRuta);
+						if( (fichEnRuta.type=='file') && (regex.test(fichEnRuta.name)) ){
+							console.log('encontrado!!!');
+						}
+					});	
+				});
+				//con el patron busco fichero alli y marco resultado
+			}
+		});
+	});
+	
+}
+
 
 //MODULO 4 : INFORME FINAL
 function informe(resultado){
