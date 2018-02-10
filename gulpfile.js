@@ -107,6 +107,11 @@ function informe(resultado){
 				console.log('\t\tDESTINOS:'+fichero.destino);
 			}else{
 				console.log('\t\tEXISTE: NO!'.red);
+			}
+			
+		});
+	});
+}
 
 
 
