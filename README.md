@@ -9,8 +9,8 @@ very early version
 TODO
 
 - [x] Expresión regular de busqueda de proyectos
-- [ ] Expresión regular de busqueda de ficheros 
+- [x] Expresión regular de busqueda de ficheros 
 - [ ] Detectar que documentos faltan
 - [ ] cacheos de destinos para compartir entre tareas
 - [ ] cacheo de listado de ficheros?? (no parece muy necesario)
-
+- [ ] modularizar para usar plugins

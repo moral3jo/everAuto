@@ -30,6 +30,7 @@ function buscarNivel(map, regex){
 	if(!map.children) return;
 	forEach.call(map.children, function(child) {
 		if(child.type=='directory' && regex.test(child.name)){
+			console.log('#N1#'+child.name);
 			buscarFicheros(child);
 		}else{
 			if(child.children) 
@@ -38,24 +39,34 @@ function buscarNivel(map, regex){
 	});
 }
 
-function buscarFicheros(rutaficheros){
+function buscarFicheros(rutaProyecto){
 	//TODO: detectar si faltan documentos
-	if(typeof rutaficheros.children !== 'undefined' && rutaficheros.children.length==0) {
-		//carpeta vacia pero era valida
-		return;
-	}
+	if(carpetaVacia(rutaProyecto)) {return;}
 	
-	forEach.call(rutaficheros.children, function(child) {
+	var ficherosadetectar = config.ficheros;
+	
+	forEach.call(rutaProyecto.children, function(child) {
 		if(child.type=='file'){
-			var destinos = destinosdedocumento(child.name);
-			console.log('## '+child.path+" -> "+destinos);
+			var destinos = destinosdedocumento(child.name, ficherosadetectar);
+			if(destinos!=null){
+				console.log('## '+child.path+" -> "+destinos);
+			}
 		}
 	});
 }
 
-function destinosdedocumento(file){
-	//TODO: cachear config.ficheros para evitar esto cada vez que buscamos
-	var ficheros = config.ficheros;
-	//TODO: pasar a expresion regular
-	return ficheros[file];
+function destinosdedocumento(ficheroActual, ficherosadetectar){
+	var listadoFicheros = Object.keys(ficherosadetectar);
+	
+	for (var i=0;i<listadoFicheros.length; i++) {
+		var regex = new RegExp(listadoFicheros[i],"i");
+		if(regex.test(ficheroActual)){
+			return ficherosadetectar[listadoFicheros[i]];
+		}
+	}
+	return null;
+}
+
+function carpetaVacia(carpeta){
+	return typeof carpeta.children !== 'undefined' && carpeta.children.length==0;
 }
