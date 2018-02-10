@@ -1,72 +1,112 @@
 const gulp = require('gulp');
 const dirTree = require('directory-tree');
 var jsonfile = require('jsonfile')
+var colors = require('colors');
 
 var forEach = Array.prototype.forEach;
 
 var config = require('./config.json');
 var mapdestino,maporigen;
 
-gulp.task('default', [ 'mapeardestino', 'mapearorigen', 'validar' ]);
+gulp.task('default', [ 'modulos' ]);
 
-gulp.task('mapeardestino', function(){
-	mapdestino = dirTree(config.destino, {});
+gulp.task('modulos', function(){
+	var resultado = {};
+	resultado.origen = config.origen;
+	resultado.regexProyecto = new RegExp(config.nivel1, "i");
+	resultado.proyectos = [];
+	
+	//buscamos proyectos en origen
+	buscarProyectos(resultado);
+	/*
+				{ name: 'A-001', path: 'origen\\A-001' },
+	*/
+	
+	//buscamos ficheros en origen por patrones. tb tenemos destinos y los que no existen en local
+	buscarFicherosLocales(resultado);
+	/*
+				{ name: 'A-001',
+				  path: 'origen\\A-001',
+				  ficheros:
+				   [ { name: 'Documento 1',
+					   patron: '01-Doc.docx',
+					   destino: [Array],							//destinos donde copiar
+					   origenpath: 'origen\\A-001\\01-Doc.docx' },	//si no existe esto es que no existe en local
+					 { name: 'Documento de tests',
+					   patron: '02-Test.docx',
+					   destino: [Array] } ] }
+	*/
+	
+	//TODO existen en destino??
+	
+	//TODO generar informe
+	informe(resultado);
 });
 
-gulp.task('mapearorigen', function(){
-	maporigen = dirTree(config.origen, {});
-});
 
-gulp.task('validar', function(){
-	if(maporigen.children==null) {
-		console.log("Error. carpeta vacia.");
-		return;
-	}
-	var regex = new RegExp(config.nivel1,"i");
-	buscarNivel(maporigen, regex);
-});
-
-function buscarNivel(map, regex){
-	if(!map.children) return;
-	forEach.call(map.children, function(child) {
-		if(child.type=='directory' && regex.test(child.name)){
-			console.log('#N1#'+child.name);
-			buscarFicheros(child);
-		}else{
-			if(child.children) 
-				buscarNivel(child, regex);
-		}
-	});
+//MODULO 1: BUSCAR PROYECTOS
+function buscarProyectos(resultado){
+	var arbolOrigen = dirTree(resultado.origen, {});
+	buscarProyectosRecursivamente(arbolOrigen, resultado);	
+	//resultado.proyectos = {'A001':{},'B002':{}};
 }
 
-function buscarFicheros(rutaProyecto){
-	//TODO: detectar si faltan documentos
-	if(carpetaVacia(rutaProyecto)) {return;}
-	
-	var ficherosadetectar = config.ficheros;
-	
-	forEach.call(rutaProyecto.children, function(child) {
-		if(child.type=='file'){
-			var destinos = destinosdedocumento(child.name, ficherosadetectar);
-			if(destinos!=null){
-				console.log('## '+child.path+" -> "+destinos);
+function buscarProyectosRecursivamente(map, resultado){
+	if(!map.children) return;
+	forEach.call(map.children, function(child) {
+		if(child.type=='directory' && resultado.regexProyecto.test(child.name)){
+			resultado.proyectos.push({name:child.name, 'path':child.path});
+		}else{
+			if(child.children){
+				buscarProyectosRecursivamente(child, resultado);
 			}
 		}
 	});
 }
 
-function destinosdedocumento(ficheroActual, ficherosadetectar){
-	var listadoFicheros = Object.keys(ficherosadetectar);
+//MODULO 2: BUSQUEDA FICHEROS LOCALES
+function buscarFicherosLocales(resultado){	
+	var ficherosAbuscar = config.ficheros2;
+	resultado.proyectos.forEach(function(proyecto) { //por cada proyecto
+		proyecto.ficheros = JSON.parse(JSON.stringify(ficherosAbuscar)); //asignamos estructura estandar
+		proyecto.ficheros.forEach(function(fichero){
+			buscarFicheroEnDirectorio(fichero, proyecto);
+		});
+	});	
+}
+
+function buscarFicheroEnDirectorio(fichero, rutaProyecto){
+	//solo busca en el raiz
+	var arbolProyecto = dirTree(rutaProyecto.path, {});
+	if(carpetaVacia(arbolProyecto)) {return;}
 	
-	for (var i=0;i<listadoFicheros.length; i++) {
-		var regex = new RegExp(listadoFicheros[i],"i");
-		if(regex.test(ficheroActual)){
-			return ficherosadetectar[listadoFicheros[i]];
+	var regex = new RegExp(fichero.patron,"i");	
+	forEach.call(arbolProyecto.children, function(fichEnRuta) {
+		if( (fichEnRuta.type=='file') && (regex.test(fichEnRuta.name)) ){
+			fichero.origenpath = fichEnRuta.path;
 		}
-	}
-	return null;
+	});	
 }
 
 function carpetaVacia(carpeta){
 	return typeof carpeta.children !== 'undefined' && carpeta.children.length==0;
 }
+
+//MODULO 4 : INFORME FINAL
+function informe(resultado){
+	console.log('#################################');
+	console.log('##           INFORME           ##');
+	console.log('#################################');
+	
+	resultado.proyectos.forEach(function(proyecto) { //por cada proyecto
+		console.log(proyecto.name.bgBlack.bold);
+		proyecto.ficheros.forEach(function(fichero){
+			console.log('\t-'+fichero.name.underline);
+			if(fichero.hasOwnProperty('origenpath')){
+				console.log('\t\tEXISTE: SI'.green);
+				console.log('\t\tDESTINOS:'+fichero.destino);
+			}else{
+				console.log('\t\tEXISTE: NO!'.red);
+
+
+

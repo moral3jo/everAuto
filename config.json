@@ -7,6 +7,10 @@
 		"01-Doc.docx" : ["01-ENT", "04-FIN/dos"],
 		"02-Test.docx" : ["02-BAS"]
 	},
+	"ficheros2" : [
+		{ "name" : "Documento 1", "patron" : "01-Doc.docx", "destino" : ["01-ENT", "04-FIN/dos"]},
+		{ "name" : "Documento de tests", "patron" : "02-Test.docx", "destino" : ["02-BAS"]}
+	],
 	"##_comm1":"expresion regular para detectar nivel 1 de proyecto",
 	"nivel1" : "\\w-\\d{3}"
 }

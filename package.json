@@ -9,6 +9,7 @@
   "author": "Roberto Moralejo",
   "license": "GNU GPLv3",
   "dependencies": {
+    "colors": "^1.1.2",
     "directory-tree": "^2.0.0",
     "jsonfile": "^4.0.0"
   },
