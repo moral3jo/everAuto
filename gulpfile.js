@@ -14,76 +14,36 @@ gulp.task('default', [ 'modulos' ]);
 gulp.task('modulos', function(){
 	var resultado = {};
 	resultado.origen = config.origen;
-	resultado.regexProyecto = new RegExp(config.nivel1, "i");
-	resultado.proyectos = [];
+	resultado.ficheros = [];
 	
-	//buscamos proyectos en origen
-	buscarProyectos(resultado);
-	/*
-				{ name: 'A-001', path: 'origen\\A-001' },
-	*/
-	
-	//buscamos ficheros en origen por patrones. tb tenemos destinos y los que no existen en local
+	//buscamos ficheros en la carpeta origen. Tb tenemos destinos y los que no existen en local
 	buscarFicherosLocales(resultado);
-	/*
-				{ name: 'A-001',
-				  path: 'origen\\A-001',
-				  ficheros:
-				   [ { name: 'Documento 1',
-					   patron: '01-Doc.docx',
-					   destino: [Array],							//destinos donde copiar
-					   origenpath: 'origen\\A-001\\01-Doc.docx' },	//si no existe esto es que no existe en local
-					 { name: 'Documento de tests',
-					   patron: '02-Test.docx',
-					   destino: [Array] } ] }
-	*/
+	
+	resultado.nombreProyecto = getCurrentDirectoryName(); //TODO: SACAR DE CARPETA ACTUAL
 	
 	//TODO existen en destino??
 	//mirarSiExistenEnDestino(resultado);
 	
 	//TODO generar informe
 	informe(resultado);
+	//console.log(resultado);
 });
 
-
-//MODULO 1: BUSCAR PROYECTOS
-function buscarProyectos(resultado){
-	var arbolOrigen = dirTree(resultado.origen, {});
-	buscarProyectosRecursivamente(arbolOrigen, resultado);	
-	//resultado.proyectos = {'A001':{},'B002':{}};
-}
-
-function buscarProyectosRecursivamente(map, resultado){
-	if(!map.children) return;
-	forEach.call(map.children, function(child) {
-		if(child.type=='directory' && resultado.regexProyecto.test(child.name)){
-			resultado.proyectos.push({name:child.name, 'path':child.path});
-		}else{
-			if(child.children){
-				buscarProyectosRecursivamente(child, resultado);
-			}
-		}
+//MODULO 1: BUSQUEDA FICHEROS LOCALES
+function buscarFicherosLocales(resultado){	
+	var ficherosAbuscar = config.ficheros2;
+	resultado.ficheros = JSON.parse(JSON.stringify(ficherosAbuscar)); //asignamos estructura estandar
+	resultado.ficheros.forEach(function(fichero){
+		buscarFicheroEnDirectorio(fichero, config.origen);
 	});
 }
 
-//MODULO 2: BUSQUEDA FICHEROS LOCALES
-function buscarFicherosLocales(resultado){	
-	var ficherosAbuscar = config.ficheros2;
-	resultado.proyectos.forEach(function(proyecto) { //por cada proyecto
-		proyecto.ficheros = JSON.parse(JSON.stringify(ficherosAbuscar)); //asignamos estructura estandar
-		proyecto.ficheros.forEach(function(fichero){
-			buscarFicheroEnDirectorio(fichero, proyecto);
-		});
-	});	
-}
-
-function buscarFicheroEnDirectorio(fichero, rutaProyecto){
-	//solo busca en el raiz
-	var arbolProyecto = dirTree(rutaProyecto.path, {});
-	if(carpetaVacia(arbolProyecto)) {return;}
+function buscarFicheroEnDirectorio(fichero, rutaFicheros){
+	var arbolFicheros = dirTree(rutaFicheros, {});
+	if(carpetaVacia(arbolFicheros)) {return;}
 	
 	var regex = new RegExp(fichero.patron,"i");	
-	forEach.call(arbolProyecto.children, function(fichEnRuta) {
+	forEach.call(arbolFicheros.children, function(fichEnRuta) {
 		if( (fichEnRuta.type=='file') && (regex.test(fichEnRuta.name)) ){
 			fichero.origenpath = fichEnRuta.path;
 		}
@@ -99,14 +59,26 @@ function mirarSiExistenEnDestino(resultado){
 	//TODO: NO PUEDO MAPEAR TODO DESTINO, ES ENORME Y NO ME INTERESA
 	//DESTINO/XXXXXXXXXXXXXXXXnombreComun/<<AQUI EMPEZAR A BUSCAR RECURSIVAMENTE>>
 	
-	fs.readdirSync(config.destino).forEach(file => {
-	  console.log(file);
-	})
+	console.log('mirara si existe destino');
+	console.log(resultado);
+	
+	
+	var proyectos = safeReadDirSync(config.destino);
+	if(proyectos==null) return;
+	
+	var regex = new RegExp(resultado.nombreProyecto);
+	
+	for (i=0; i<proyectos.length;i++) {
+		if(regex.test(proyectos[i])){
+			console.log('proyecto destino encontrado');
+			console.log(proyectos[i]);
+		}
+	}
 	
 	//mapeo destino
 	//var arbolProyecto = dirTree(rutaProyecto.path, {});
 	
-	
+/*	
 	//recorro cada proyecto
 	resultado.proyectos.forEach(function(proyecto) { //por cada proyecto
 		proyecto.ficheros.forEach(function(fichero){ //por cada fichero
@@ -128,7 +100,20 @@ function mirarSiExistenEnDestino(resultado){
 			}
 		});
 	});
-	
+	*/
+}
+
+function safeReadDirSync (path) {
+	let dirData = {};
+	try {
+		dirData = fs.readdirSync(path);
+	} catch(ex) {
+		if (ex.code == "EACCES")
+			//User does not have permissions, ignore directory
+			return null;
+		else throw ex;
+	}
+	return dirData;
 }
 
 
@@ -138,20 +123,24 @@ function informe(resultado){
 	console.log('##           INFORME           ##');
 	console.log('#################################');
 	
-	resultado.proyectos.forEach(function(proyecto) { //por cada proyecto
-		console.log(proyecto.name.bgBlack.bold);
-		proyecto.ficheros.forEach(function(fichero){
-			console.log('\t-'+fichero.name.underline);
-			if(fichero.hasOwnProperty('origenpath')){
-				console.log('\t\tEXISTE: SI'.green);
-				console.log('\t\tDESTINOS:'+fichero.destino);
-			}else{
-				console.log('\t\tEXISTE: NO!'.red);
-			}
-			
-		});
+	console.log(resultado.origen.bgBlack.bold);
+	resultado.ficheros.forEach(function(fichero){
+		process.stdout.write('\t-'+fichero.name.underline+":");
+		if(fichero.hasOwnProperty('origenpath')){
+			console.log(' EXISTE'.green);
+			console.log('\t\tDESTINOS:'+fichero.destino);
+		}else{
+			console.log(' NO EXISTE'.red);
+		}
+		
 	});
 }
 
 
+function getCurrentDirectoryName() { 
+	var fullPath = __dirname; 
+	var path = fullPath.split('/'); 
+	var cwd = path[path.length-1]; 
+	return cwd; 
+}
 

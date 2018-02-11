@@ -1,5 +1,5 @@
 {
-	"origen" : "./origen/",
+	"origen" : "./origen/A-001/",
 	"destino"   : "./destino/",
 	"tmpfolder" : "./tmp/",
 	"##_comm0":"listado de ficheros con sus destinos. Acepta expresiones regulares en el nombre de los ficheros",
@@ -11,6 +11,8 @@
 		{ "name" : "Documento 1", "patron" : "01-Doc.docx", "destino" : ["01-ENT", "04-FIN/dos"]},
 		{ "name" : "Documento de tests", "patron" : "02-Test.docx", "destino" : ["02-BAS"]}
 	],
-	"##_comm1":"expresion regular para detectar nivel 1 de proyecto",
-	"nivel1" : "\\w-\\d{3}"
+	"##_comm1":"expresion regular para detectar proyectos. Cualquier carpeta que no sea ZZ_OLD que como nombro a los proyectos viejos",
+	"regexProyecto" : "[^OLD]",
+	"##_comm2":"expresion regular para detectar tareas",
+	"regexTarea" : "\\w-\\d{3}"
 }
